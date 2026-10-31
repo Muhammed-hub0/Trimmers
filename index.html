@@ -284,6 +284,8 @@ body {
         <button type="button" class="preset-pill" data-a="vgr-290" data-b="vgr-361">VGR 290 🆚 VGR 361</button>
         <button type="button" class="preset-pill" data-a="kemei-3208" data-b="vgr-634">Kemei 3208 🆚 VGR 634</button>
         <button type="button" class="preset-pill" data-a="kemei-3208" data-b="vgr-361">Kemei 3208 🆚 VGR 361</button>
+        <button type="button" class="preset-pill" data-a="kemei-1910" data-b="vgr-393">Kemei 1910 🆚 VGR 393</button>
+        <button type="button" class="preset-pill" data-a="kemei-1910" data-b="kemei-3208">Kemei 1910 🆚 Kemei 3208</button>
       </div>
     </div>
 
@@ -291,7 +293,7 @@ body {
     <div class="surface-card p-4 sm:p-5 mb-5">
       <div class="grid grid-cols-1 sm:grid-cols-11 gap-3 items-end">
         <div class="sm:col-span-5">
-          <label for="sa" class="block text-xs font-bold mb-1.5" style="color: var(--a);">🔵 الماكينة الأولى</label>
+          <label for="sa" class="block text-xs font-bold mb-1.5" style="color: var(--a);">🔵 الجهاز الأول</label>
           <select id="sa" class="pick-select sel-a"></select>
         </div>
         <div class="sm:col-span-1 flex justify-center">
@@ -300,7 +302,7 @@ body {
           </button>
         </div>
         <div class="sm:col-span-5">
-          <label for="sb" class="block text-xs font-bold mb-1.5" style="color: var(--b);">🟠 الماكينة الثانية</label>
+          <label for="sb" class="block text-xs font-bold mb-1.5" style="color: var(--b);">🟠 الجهاز الثاني</label>
           <select id="sb" class="pick-select sel-b"></select>
         </div>
       </div>
@@ -626,6 +628,25 @@ const P = [
     personal_rating: 9.5,
     price: 547,
     link: "https://link.amazon/B0d4RdJyc"
+  },
+  {
+    id: "kemei-1910",
+    brand: "Kemei",
+    ar: "كيمي",
+    short: "Kemei KM-1910",
+    name: "Kemei Electric Shaver & Facial Trimmer KM-1910",
+    usage: "أماكن حساسة + ذقن",
+    blade_type: "استانلس مزدوج",
+    accessories: "4 أمشاط (1، 2، 4، 6 مم)",
+    waterproof: true,
+    display: "مؤشر ليد",
+    type_c: false,
+    charge_time: "8 ساعات",
+    charge_hours: 8.0,
+    battery: 60,
+    personal_rating: 6.0,
+    price: 470,
+    link: "https://link.amazon/B08ALvRUr"
   }
 ];
 
@@ -647,7 +668,7 @@ const R = [
 ];
 
 const $ = id => document.getElementById(id);
-let a = 0, b = 1;
+let a = -1, b = -1;
 
 function readHash() {
   try {
@@ -671,20 +692,20 @@ function writeHash() {
 
 function fillSelects() {
   const o = P.map((p, i) => '<option value="' + i + '">' + p.short + " — (" + n(p.price) + " ج.م)</option>").join("");
-  const ph = '<option value="-1">اختار الماكينة</option>';
-  $("sa").innerHTML = ph + o;
-  $("sb").innerHTML = ph + o;
+  $("sa").innerHTML = '<option value="-1">اختار الجهاز الأول...</option>' + o;
+  $("sb").innerHTML = '<option value="-1">اختار الجهاز الثاني...</option>' + o;
   $("sa").value = a;
   $("sb").value = b;
 }
 
-function renderEmptySlot(slotClass, label) {
+function renderEmptySlot(slotClass, label, subtext) {
   const colorVar = slotClass === "a" ? "var(--a)" : "var(--b)";
+  const selectId = slotClass === "a" ? "sa" : "sb";
   return (
-    '<div class="empty-slot">' +
-      '<div class="text-2xl mb-2" style="color: ' + colorVar + ';">⬆️</div>' +
-      '<div class="font-extrabold text-base mb-1">' + label + '</div>' +
-      '<p class="text-xs m-0" style="color: var(--muted);">اختار ماكينة من القائمة بالأعلى لبدء المقارنة</p>' +
+    '<div class="empty-slot cursor-pointer transition hover:opacity-90" data-focus-select="' + selectId + '">' +
+      '<div class="text-3xl mb-2" style="color: ' + colorVar + ';">⬆️</div>' +
+      '<div class="font-extrabold text-lg mb-1" style="color: ' + colorVar + ';">' + label + '</div>' +
+      '<p class="text-xs sm:text-sm m-0" style="color: var(--muted);">' + (subtext || 'اضغط هنا أو اختار من القائمة بالأعلى لبدء المقارنة') + '</p>' +
     '</div>'
   );
 }
@@ -772,9 +793,16 @@ function buildConciseDiffs(A, B) {
 
 function renderComparison() {
   const A = P[a], B = P[b];
-  $("cards").innerHTML =
-    (A ? renderCard(A, "a", "الماكينة الأولى") : renderEmptySlot("a", "اختار الماكينة الأولى")) +
-    (B ? renderCard(B, "b", "الماكينة الثانية") : renderEmptySlot("b", "اختار الماكينة الثانية"));
+  if (!A && !B) {
+    $("cards").innerHTML =
+      '<div class="col-span-full">' +
+        renderEmptySlot("a", "يرجى اختيار الجهاز الأول لبدء المقارنة", "اختار الجهاز الأول من القائمة بالأعلى (أو من المقارنات السريعة) لعرض مواصفاته ومقارنته") +
+      '</div>';
+  } else {
+    $("cards").innerHTML =
+      (A ? renderCard(A, "a", "الجهاز الأول") : renderEmptySlot("a", "اختار الجهاز الأول", "اختار الجهاز الأول من القائمة بالأعلى لإتمام المقارنة")) +
+      (B ? renderCard(B, "b", "الجهاز الثاني") : renderEmptySlot("b", "اختار الجهاز الثاني للمقارنة", "اختار الجهاز الثاني من القائمة بالأعلى لمقارنته مع " + A.short));
+  }
 
   const both = !!(A && B);
   document.querySelectorAll(".needboth").forEach(e => e.style.display = both ? "" : "none");
@@ -1081,6 +1109,16 @@ function initApp() {
 
   $("sa").addEventListener("change", handlePickChange);
   $("sb").addEventListener("change", handlePickChange);
+
+  $("cards").addEventListener("click", e => {
+    const slot = e.target.closest("[data-focus-select]");
+    if (!slot) return;
+    const targetSelect = $(slot.getAttribute("data-focus-select"));
+    if (targetSelect) {
+      targetSelect.focus();
+      targetSelect.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
 
   $("swapBtn").addEventListener("click", () => {
     const temp = a;
